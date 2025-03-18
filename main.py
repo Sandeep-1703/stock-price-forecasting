@@ -1,121 +1,204 @@
-# Import required libraries
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from pandas_datareader.data import DataReader
 from sklearn.preprocessing import MinMaxScaler
-from keras.models import Sequential
-from keras.layers import LSTM, Dense, Dropout
-from datetime import datetime
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
 
-# Fetch stock data
-start_date = "2015-01-01"
-end_date = "2023-01-01"
-stock_symbol = "AAPL"
 
-df = DataReader(stock_symbol, 'yahoo', start_date, end_date)
-df = df[['Close']]  # Focus on 'Close' price
-df.reset_index(inplace=True)
-df.set_index('Date', inplace=True)
+import yfinance as yf
+import datetime
 
-# Plot the stock closing prices
-plt.figure(figsize=(10, 6))
-plt.plot(df['Close'], label=f"{stock_symbol} Closing Prices")
-plt.title(f"{stock_symbol} Stock Prices")
-plt.xlabel("Date")
-plt.ylabel("Close Price")
-plt.legend()
-plt.show()
 
-# Normalize the data
-scaler = MinMaxScaler(feature_range=(0, 1))
-scaled_data = scaler.fit_transform(df['Close'].values.reshape(-1, 1))
+# List of popular stock ticker symbols for users to choose from
+stock_list = {
+    "Apple Inc.": "AAPL",
+    "Microsoft Corporation": "MSFT",
+    "Amazon.com, Inc.": "AMZN",
+    "Alphabet Inc. (Google)": "GOOGL",
+    "Meta Platforms, Inc. (Facebook)": "META",
+    "NVIDIA Corporation": "NVDA",
+    "Tesla, Inc.": "TSLA",
+    "Netflix, Inc.": "NFLX",
+    "Intel Corporation": "INTC",
+    "Adobe Inc.": "ADBE",
+    "JPMorgan Chase & Co.": "JPM",
+    "Bank of America Corporation": "BAC",
+    "Coca-Cola Company": "KO",
+    "PepsiCo, Inc.": "PEP",
+    "Nike, Inc.": "NKE",
+    "Walmart Inc.": "WMT",
+    "The Home Depot, Inc.": "HD",
+    "Exxon Mobil Corporation": "XOM",
+    "Chevron Corporation": "CVX",
+    "Berkshire Hathaway Inc.": "BRK.B",
+    "McDonald's Corporation": "MCD",
+    "Adani Power": "ADANIPOWER.NS",
+    "Tata Motors": "TATAMOTORS.NS"
+}
 
-# Split into training and testing datasets
-train_size = int(len(scaled_data) * 0.8)
-train_data = scaled_data[:train_size]
-test_data = scaled_data[train_size:]
+# Display the list of companies to the user and allow them to pick a stock
+print("Select a stock by entering the corresponding number:")
+for idx, company in enumerate(stock_list.keys(), start=1):
+    print(f"{idx}. {company}")
 
-# Create sequences for LSTM
-def create_sequences(data, sequence_length):
-    x, y = [], []
-    for i in range(len(data) - sequence_length):
-        x.append(data[i:i + sequence_length])
-        y.append(data[i + sequence_length])
-    return np.array(x), np.array(y)
+# Ask the user for their choice
+choice = int(input("\nEnter the corresponding stock number you'd like to analyze: "))
 
-sequence_length = 60  # 60 days of historical data to predict the next day
-x_train, y_train = create_sequences(train_data, sequence_length)
-x_test, y_test = create_sequences(test_data, sequence_length)
+# Validate user input
+if 1 <= choice <= len(stock_list):
+    selected_stock = list(stock_list.values())[choice - 1]
+    print(f"\nYou selected: {list(stock_list.keys())[choice - 1]} (Ticker: {selected_stock})")
+else:
+    print("Invalid selection! Please restart and choose a valid stock number.")
+    exit()
 
-# Build the LSTM model
-model = Sequential([
-    LSTM(50, return_sequences=True, input_shape=(x_train.shape[1], 1)),
-    Dropout(0.2),
-    LSTM(50, return_sequences=False),
-    Dropout(0.2),
-    Dense(25),
-    Dense(1)
-])
+start_date = '2010-01-01'
+end_date = datetime.datetime.today().strftime('%Y-%m-%d')
 
+# Fetch data using yfinance for the selected stock
+tickerData = yf.Ticker(selected_stock)
+tickerDf = tickerData.history(period='1d', start=start_date, end=end_date)
+
+# If you want to convert it into a DataFrame explicitly (though it's already a DataFrame)
+df = pd.DataFrame(tickerDf)
+
+# Use 'Close' column for prediction
+data = df.filter(['Close'])
+
+# 2. Scale the data to the range [0, 1] using MinMaxScaler
+scaler = MinMaxScaler(feature_range=(0,1))
+scaled_data = scaler.fit_transform(data)
+
+# 3. Function to create sequences (time steps)
+def create_sequences(dataset, time_step=1):
+    dataX, dataY = [], []
+    for i in range(len(dataset)-time_step-1):
+        a = dataset[i:(i+time_step), 0]  # Select the sequence of `time_step` size
+        dataX.append(a)
+        dataY.append(dataset[i + time_step, 0])  # The value to predict is the next time step
+    return np.array(dataX), np.array(dataY)
+
+# 4. Create training sequences
+time_step = 100  # We'll look back at the last 100 days for predictions
+X, y = create_sequences(scaled_data, time_step)
+
+# 5. Reshape X for LSTM [samples, time steps, features]
+X = X.reshape(X.shape[0], X.shape[1], 1)
+
+# 6. Create the LSTM model
+model = Sequential()
+model.add(LSTM(units=50, return_sequences=True, input_shape=(X.shape[1], 1)))
+model.add(LSTM(units=50))
+model.add(Dense(units=1))
+
+# 7. Compile and train the model
 model.compile(optimizer='adam', loss='mean_squared_error')
-model.summary()
+model.fit(X, y, batch_size=16, epochs=15, verbose=1)
 
-# Train the LSTM model
-history = model.fit(x_train, y_train, epochs=20, batch_size=32, validation_data=(x_test, y_test))
+# 8. Prepare data for prediction: take the last `time_step` days as input
+last_sequence = scaled_data[-time_step:].reshape(1, time_step, 1)
 
-# Plot training and validation loss
+
+# 9. Predict the next 5 days
+predicted_values = []
+for _ in range(future_days):
+    prediction = model.predict(last_sequence)  # Predict the next day
+    predicted_values.append(prediction[0, 0])  # Store the prediction
+    # Update the input for the next prediction
+    last_sequence = np.append(last_sequence[:, 1:, :], prediction.reshape(1, 1, 1), axis=1)
+
+# 10. Convert the predictions back to the original scale (inverse transform)
+predicted_values_actual = scaler.inverse_transform(np.array(predicted_values).reshape(-1, 1))
+
+# 11. Convert the past data back to the original scale (inverse transform)
+past_data_actual = scaler.inverse_transform(scaled_data[-time_step:].reshape(-1, 1))
+
+# 12. Plot the results
+# Combine the past data with the predicted values
+all_data_actual = np.concatenate((past_data_actual, predicted_values_actual))
+
+# X-axis for the past 100 days and the next 5 predicted days
+x_values = np.arange(time_step + future_days)
+
+# Plot the past data and the predicted future values
 plt.figure(figsize=(10, 6))
-plt.plot(history.history['loss'], label='Training Loss')
-plt.plot(history.history['val_loss'], label='Validation Loss')
-plt.title('Model Loss During Training')
-plt.xlabel('Epochs')
-plt.ylabel('Loss')
+plt.plot(x_values[:time_step], past_data_actual, label="Past Data", color='blue')
+plt.plot(x_values[time_step:], predicted_values_actual, label=f"Predicted Next {future_days} Days", color='red')
+
+# Customize plot
+plt.title(f"Past Data and Predicted Next {future_days} Days for {list(stock_list.keys())[choice - 1]}")
+plt.xlabel('Time (Days)')
+plt.ylabel('Value')
+# Reduce number of ticks by showing every 10th tick
+plt.xticks(rotation=45)
+plt.gca().xaxis.set_major_locator(plt.MaxNLocator(nbins=7))  # Automatically adjust the number of ticks
+
 plt.legend()
+plt.grid(True)
 plt.show()
 
-# Make predictions
-predicted_prices = model.predict(x_test)
-predicted_prices = scaler.inverse_transform(predicted_prices)
 
-# Reverse scale the true prices for comparison
-true_prices = scaler.inverse_transform(y_test.reshape(-1, 1))
 
-# Visualize the predictions vs actual prices
-plt.figure(figsize=(12, 6))
-plt.plot(df.index[-len(true_prices):], true_prices, label='True Prices')
-plt.plot(df.index[-len(predicted_prices):], predicted_prices, label='LSTM Predictions', linestyle='dashed')
-plt.title(f"{stock_symbol} Stock Price Prediction")
-plt.xlabel('Date')
-plt.ylabel('Close Price')
+
+
+# Function to ask the user for the number of future days
+def get_future_days():
+    while True:
+        try:
+            # Asking user to input the number of future days for prediction
+            future_days = int(input("Enter the number of future days for which you want a prediction: "))
+            
+            # Ensure the input is a positive number
+            if future_days > 0:
+                return future_days
+            else:
+                print("Please enter a positive integer greater than 0.")
+        except ValueError:
+            print("Invalid input. Please enter a valid number.")
+
+# Now, let's call the function to get the input
+future_days = get_future_days()
+
+print(f"You've requested predictions for {future_days} future days.")
+
+# 8. Prepare data for prediction: take the last `time_step` days as input
+last_sequence = scaled_data[-time_step:].reshape(1, time_step, 1)
+
+# 9. Predict the next 5 days
+predicted_values = []
+for _ in range(future_days):
+    prediction = model.predict(last_sequence)  # Predict the next day
+    predicted_values.append(prediction[0, 0])  # Store the prediction
+    # Update the input for the next prediction
+    last_sequence = np.append(last_sequence[:, 1:, :], prediction.reshape(1, 1, 1), axis=1)
+
+# 10. Convert the predictions back to the original scale (inverse transform)
+predicted_values_actual = scaler.inverse_transform(np.array(predicted_values).reshape(-1, 1))
+
+# 11. Convert the past data back to the original scale (inverse transform)
+past_data_actual = scaler.inverse_transform(scaled_data[-time_step:].reshape(-1, 1))
+
+# 12. Plot the results
+# Combine the past data with the predicted values
+all_data_actual = np.concatenate((past_data_actual, predicted_values_actual))
+
+# X-axis for the past 100 days and the next 5 predicted days
+x_values = np.arange(time_step + future_days)
+
+# Plot the past data and the predicted future values
+plt.figure(figsize=(10, 6))
+plt.plot(x_values[:time_step], past_data_actual, label="Past Data", color='blue')
+plt.plot(x_values[time_step:], predicted_values_actual, label=f"Predicted Next {future_days} Days", color='red')
+
+# Customize plot
+plt.title(f"Past Data and Predicted Next {future_days} Days for {list(stock_list.keys())[choice - 1]}")
+plt.xlabel('Time (Days)')
+plt.ylabel('Value')
+# Reduce number of ticks by showing every 10th tick
+plt.xticks(rotation=45)
+plt.gca().xaxis.set_major_locator(plt.MaxNLocator(nbins=7))  # Automatically adjust the number of ticks
+
 plt.legend()
+plt.grid(True)
 plt.show()
-
-# Forecast future prices
-last_sequence = scaled_data[-sequence_length:]
-last_sequence = last_sequence.reshape(1, sequence_length, 1)
-
-future_steps = 30  # Forecast for 30 days
-forecast = []
-
-for _ in range(future_steps):
-    prediction = model.predict(last_sequence)
-    forecast.append(prediction[0, 0])
-    last_sequence = np.append(last_sequence[:, 1:, :], [[prediction]], axis=1)
-
-# Scale back the forecast to original prices
-forecast = scaler.inverse_transform(np.array(forecast).reshape(-1, 1))
-forecast_dates = pd.date_range(df.index[-1], periods=future_steps + 1, freq='B')[1:]
-
-# Plot the forecasted future prices
-plt.figure(figsize=(12, 6))
-plt.plot(df['Close'], label='Historical Prices')
-plt.plot(forecast_dates, forecast, label='Forecasted Prices', color='red')
-plt.title(f"{stock_symbol} 30-Day Stock Price Forecast")
-plt.xlabel('Date')
-plt.ylabel('Close Price')
-plt.legend()
-plt.show()
-
-# Save the LSTM model
-model.save('lstm_stock_model.h5')
