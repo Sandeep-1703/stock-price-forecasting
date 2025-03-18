@@ -1,139 +1,88 @@
-# Stock Price Forecasting using LSTM
+Stock Price Prediction using LSTM
 
-This project demonstrates how to use a Long Short-Term Memory (LSTM) model for stock price forecasting. It involves preprocessing stock data, training the LSTM model, and making predictions for both historical test data and future stock prices.
+Overview
 
----
+This project implements a Long Short-Term Memory (LSTM) model to predict stock prices using historical stock market data. It fetches stock prices from Yahoo Finance and allows users to select a stock from a predefined list. The model then predicts future stock prices based on past trends.
 
-## Features
-- Fetches stock price data from Yahoo Finance.
-- Uses LSTM to predict stock prices based on historical data.
-- Visualizes the predictions versus actual prices.
-- Forecasts future stock prices for the next 30 days.
+Features
 
----
+Fetches stock price data from Yahoo Finance.
 
-## Requirements
+Allows users to select a stock from a predefined list.
 
-Before running the code, ensure the following Python libraries are installed:
+Uses MinMaxScaler to normalize the data for better LSTM performance.
 
-```bash
-pip install numpy pandas matplotlib scikit-learn keras pandas-datareader
-```
+Creates sequences of past stock prices as input for prediction.
 
----
+Implements an LSTM model to predict future stock prices.
 
-## How to Run
+Plots past stock data along with predicted future prices.
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/stock-price-forecasting-lstm.git
-   cd stock-price-forecasting-lstm
-   ```
+Requirements
 
-2. Open the `lstm_stock_forecasting.py` script.
+To run this project, you need the following Python packages:
 
-3. Set your parameters:
-   - **Stock Symbol**: Replace `AAPL` with your desired stock symbol.
-   - **Start and End Dates**: Modify `start_date` and `end_date` to your desired range.
+pip install numpy pandas matplotlib scikit-learn tensorflow yfinance
 
-4. Run the script:
-   ```bash
-   python lstm_stock_forecasting.py
-   ```
+How to Run
 
-5. Outputs:
-   - Historical stock prices vs. predictions.
-   - Forecasted stock prices for the next 30 days.
+Run the script.
 
----
+Select a stock from the displayed list by entering the corresponding number.
 
-## Model Architecture
+Enter the number of future days for which you want a prediction.
 
-- **LSTM Layers**: Captures temporal dependencies in stock prices.
-- **Dropout Layers**: Reduces overfitting during training.
-- **Dense Layers**: Outputs the final predicted price.
+The model will train using historical stock data.
 
-### Model Summary
-- Input Shape: `(60, 1)` (60 days of historical data per sample)
-- Hidden Layers:
-  - LSTM (50 units) with return sequences.
-  - Dropout (20%).
-  - LSTM (50 units) without return sequences.
-  - Dropout (20%).
-- Output Layer: Dense (1 unit).
+The predicted stock prices for the next few days will be displayed and plotted.
 
----
+Model Details
 
-## Data Flow
+The LSTM model consists of:
 
-1. **Data Collection**:
-   - Stock price data is fetched using `pandas-datareader` from Yahoo Finance.
+Two LSTM layers with 50 units each.
 
-2. **Data Preprocessing**:
-   - Normalize prices using `MinMaxScaler`.
-   - Create sequences of 60 days for training/testing.
+A Dense output layer with one neuron.
 
-3. **Model Training**:
-   - Train on 80% of the data.
-   - Validate on 20% of the data.
+Mean Squared Error (MSE) loss function.
 
-4. **Prediction and Forecasting**:
-   - Predict prices for test data.
-   - Forecast prices for the next 30 days using the trained model.
+Adam optimizer.
 
----
+The model is trained for 15 epochs with a batch size of 16.
 
-## Visualizations
+Data Preprocessing
 
-1. **Historical Prices**:
-   - Plot of historical stock prices.
+Data is fetched using yfinance.
 
-2. **Predicted vs Actual Prices**:
-   - Comparison of predicted and actual prices for the test set.
+Only the closing price is used for training.
 
-3. **Forecasted Prices**:
-   - Predicted prices for the next 30 days.
+The data is normalized using MinMaxScaler to fit in the range [0,1].
 
----
+Time-step sequences of 100 days are created for training.
 
-## Example Plots
+Prediction & Visualization
 
-1. **Historical Prices**:
-   ![Historical Prices](assets/historical_prices.png)
+The model predicts future stock prices based on the last 100 days of data.
 
-2. **Predicted vs Actual**:
-   ![Predictions vs Actual](assets/predictions_vs_actual.png)
+The results are plotted using Matplotlib.
 
-3. **Forecasted Prices**:
-   ![Forecasted Prices](assets/forecasted_prices.png)
+The blue curve represents past stock prices, while the red curve shows the predicted values for future days.
 
----
+Notes
 
-## Future Improvements
+The model does not guarantee accurate predictions since stock prices depend on various factors beyond historical trends.
 
-1. **Include Additional Features**:
-   - Add technical indicators or volume data.
+It is recommended to use this project for learning purposes rather than financial decisions.
 
-2. **Optimize Hyperparameters**:
-   - Use grid search or Bayesian optimization for tuning.
+Future Improvements
 
-3. **Use Attention Mechanisms**:
-   - Enhance LSTM performance by focusing on relevant time steps.
+Enhance the model with additional features like volume, moving averages, and technical indicators.
 
----
+Implement different neural network architectures such as GRU or Transformer models.
 
-## References
-- [Keras Documentation](https://keras.io/)
-- [Yahoo Finance API](https://finance.yahoo.com/)
-- [LSTM in Deep Learning](https://en.wikipedia.org/wiki/Long_short-term_memory)
+Fine-tune hyperparameters for better performance.
 
----
+License
 
-## License
-
-This project is licensed under the MIT License. See the `LICENSE` file for details.
-
----
-
-Feel free to fork and improve this project! Contributions are welcome.
+This project is for educational purposes only. Use at your own risk.
 
