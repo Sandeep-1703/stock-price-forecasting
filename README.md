@@ -1,88 +1,57 @@
-Stock Price Prediction using LSTM
+# Stock Price Prediction Using LSTM
 
-Overview
+## Overview
+This project uses an LSTM (Long Short-Term Memory) model to predict stock prices based on historical data. The script allows users to select a stock, fetches its historical price data using Yahoo Finance, and trains an LSTM model to predict future stock prices.
 
-This project implements a Long Short-Term Memory (LSTM) model to predict stock prices using historical stock market data. It fetches stock prices from Yahoo Finance and allows users to select a stock from a predefined list. The model then predicts future stock prices based on past trends.
+## Features
+- Allows users to select a stock from a predefined list.
+- Fetches historical stock price data using `yfinance`.
+- Normalizes data using `MinMaxScaler`.
+- Creates time-series sequences for LSTM input.
+- Builds and trains an LSTM-based deep learning model.
+- Predicts future stock prices for a user-defined number of days.
+- Visualizes past stock prices along with predicted prices.
 
-Features
+## Requirements
+Ensure you have the following Python libraries installed:
 
-Fetches stock price data from Yahoo Finance.
-
-Allows users to select a stock from a predefined list.
-
-Uses MinMaxScaler to normalize the data for better LSTM performance.
-
-Creates sequences of past stock prices as input for prediction.
-
-Implements an LSTM model to predict future stock prices.
-
-Plots past stock data along with predicted future prices.
-
-Requirements
-
-To run this project, you need the following Python packages:
-
+```bash
 pip install numpy pandas matplotlib scikit-learn tensorflow yfinance
+```
 
-How to Run
+## Usage
+1. Run the script:
 
-Run the script.
+   ```bash
+   python stock_prediction.py
+   ```
 
-Select a stock from the displayed list by entering the corresponding number.
+2. Select a stock by entering the corresponding number from the displayed list.
+3. Enter the number of future days for which you want predictions.
+4. The script will fetch the stock data, train the model, and plot past stock prices along with predicted values.
 
-Enter the number of future days for which you want a prediction.
+## File Breakdown
+- `yfinance`: Fetches historical stock data.
+- `MinMaxScaler`: Normalizes stock prices to a range between 0 and 1.
+- `LSTM Model`: Trained to predict future prices based on historical data.
+- `Matplotlib`: Used for visualizing stock price trends.
 
-The model will train using historical stock data.
+## How It Works
+1. **Fetch Data**: The script collects stock prices starting from 2010.
+2. **Preprocessing**: Data is scaled and split into sequences.
+3. **Model Training**: The LSTM model is trained on historical data.
+4. **Prediction**: The trained model predicts future stock prices.
+5. **Visualization**: The script plots actual stock prices along with predicted values.
 
-The predicted stock prices for the next few days will be displayed and plotted.
+## Example Output
+After running the script, you will see a plot showing:
+- The past 100 days of stock price data (in blue).
+- The predicted stock prices for the next `n` days (in red).
 
-Model Details
+## Notes
+- The model is trained using a simple architecture and may require hyperparameter tuning for improved accuracy.
+- Data is fetched dynamically from Yahoo Finance, so availability may vary.
 
-The LSTM model consists of:
-
-Two LSTM layers with 50 units each.
-
-A Dense output layer with one neuron.
-
-Mean Squared Error (MSE) loss function.
-
-Adam optimizer.
-
-The model is trained for 15 epochs with a batch size of 16.
-
-Data Preprocessing
-
-Data is fetched using yfinance.
-
-Only the closing price is used for training.
-
-The data is normalized using MinMaxScaler to fit in the range [0,1].
-
-Time-step sequences of 100 days are created for training.
-
-Prediction & Visualization
-
-The model predicts future stock prices based on the last 100 days of data.
-
-The results are plotted using Matplotlib.
-
-The blue curve represents past stock prices, while the red curve shows the predicted values for future days.
-
-Notes
-
-The model does not guarantee accurate predictions since stock prices depend on various factors beyond historical trends.
-
-It is recommended to use this project for learning purposes rather than financial decisions.
-
-Future Improvements
-
-Enhance the model with additional features like volume, moving averages, and technical indicators.
-
-Implement different neural network architectures such as GRU or Transformer models.
-
-Fine-tune hyperparameters for better performance.
-
-License
-
-This project is for educational purposes only. Use at your own risk.
+## License
+This project is for educational purposes and does not constitute financial advice. Use at your own risk.
 
